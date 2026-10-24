@@ -98,11 +98,15 @@ switch ($action) {
 
 		$port = $config['lua']['gameProtocolPort'];
 
-		// Cast system: intercept @cast login before authentication
+		// Livestream do Canary: o espectador loga com a conta "@livestream" e a senha da transmissão
+		// (vazia se o jogador não definiu senha no !livestream). Lista quem está transmitindo segundo
+		// active_livestream_casters; a senha é conferida pelo servidor (LivestreamManager::canWatch)
+		// quando o espectador entra no mundo, a partir da chave de sessão "@livestream\n<senha>",
+		// o mesmo formato que o protocollogin.cpp do Canary devolve no login pela porta 7171.
 		$inputEmail_check = $request->email ?? "";
 		$inputAccountName_check = $request->accountname ?? "";
-		if ($inputEmail_check === "@cast" || $inputAccountName_check === "@cast") {
-			$castWorld = [
+		if ($inputEmail_check === "@livestream" || $inputAccountName_check === "@livestream") {
+			$livestreamWorld = [
 				"id" => 0,
 				"name" => $config["lua"]["serverName"],
 				"externaladdress" => $config["lua"]["ip"],
@@ -119,46 +123,20 @@ switch ($action) {
 				"restrictedstore" => false,
 				"currenttournamentphase" => 2
 			];
-			// Show:
-			//   (a) real-player broadcasters in cast_broadcasters, AND
-			//   (b) every bot character (account_id = BOT_ACCOUNT_ID), even when hibernated.
-			// Hibernated bots' cast_broadcasters row is deleted by C++ (bot_engine.cpp::hibernateBot
-			// line 2432), but they should still appear in the cast list — selecting one triggers
-			// castViewerLogin (protocolgame.cpp:746-755) which calls wakeBot synchronously, then
-			// the viewer connects to the freshly-woken Player. Stream OFF for hibernated stays
-			// correct because the in-memory castBroadcasting flag is set false on hibernate and
-			// true on wake.
-			//
-			// bot_active_players is maintained by bot_engine.cpp (registerBot/unregisterBot
-			// at src/creatures/players/bot/bot_engine.cpp:2303,2342) and contains the GUIDs
-			// of bots currently loaded into the C++ engine. Using this instead of a raw
-			// account_id=65000 filter ensures:
-			//   - we only show bots that are actually loaded (not all 997 seeded characters
-			//     when botPlayersOnline < total — see data/scripts/lib/bot_system.lua:15)
-			//   - independent of the botPlayersShowAsOnline config (separate concern)
-			//   - independent of the 10-min players_online update cycle (instant on register)
-			//   - hibernated bots are kept (wake-on-click still works via castViewerLogin)
-			// Table contract: data-otservbr-global/migrations/60.lua.
-			$broadcasters = Player::where(function ($q) {
-				// Inner closure → grouped OR: (id IN cast_broadcasters OR id IN bot_active_players)
-				$q->whereIn("id", function ($sub) {
-					$sub->select("player_id")->from("cast_broadcasters");
-				})->orWhereIn("id", function ($sub) {
-					$sub->select("player_id")->from("bot_active_players");
-				});
+			$casters = Player::whereIn("id", function ($sub) {
+				$sub->select("caster_id")->from("active_livestream_casters")->where("livestream_status", 1);
 			})
-				// notDeleted() chained OUTSIDE the closure so it AND-binds to the full disjunction:
-				//   (id IN cast_broadcasters OR id IN bot_active_players) AND deletion = 0
-				// MyAAC scopeNotDeleted (system/src/Models/Player.php:72) maps to `WHERE deletion = 0`.
-				// The column is `deletion` (BIGINT, 0 = alive), NOT `deleted_at`.
 				->notDeleted()
 				->selectRaw("id, name, level, sex, vocation, looktype, lookhead, lookbody, looklegs, lookfeet, lookaddons")
 				->orderBy("name")
 				->get();
-			$castCharacters = [];
+			if (count($casters) === 0) {
+				sendError("There are no players with the livestream on.");
+			}
+			$livestreamCharacters = [];
 			$first = true;
-			foreach ($broadcasters as $player) {
-				$castCharacters[] = [
+			foreach ($casters as $player) {
+				$livestreamCharacters[] = [
 					"worldid" => 0,
 					"name" => $player->name,
 					"ismale" => $player->sex === 1,
@@ -179,17 +157,8 @@ switch ($action) {
 				];
 				$first = false;
 			}
-			$castSession = [
-				// The part after the newline is the cast-operator password. The game server
-				// splits this session key on "\n" (protocolgame.cpp onRecvFirstMessage) and
-				// compares the tail against castOperatorPassword to decide whether this viewer
-				// may drive the bot with /cavebot from Cast Chat. The legacy 7171 login path
-				// already forwards it this way (protocollogin.cpp:43); this endpoint used to
-				// hardcode an empty tail, which silently disabled operator mode for every
-				// viewer that logged in through the web service.
-				// Watching stays unauthenticated: a wrong or absent password just yields an
-				// ordinary read-only viewer, exactly as before.
-				"sessionkey" => "@cast\n" . ($request->password ?? ""),
+			$livestreamSession = [
+				"sessionkey" => "@livestream\n" . ($request->password ?? ""),
 				"lastlogintime" => 0,
 				"ispremium" => true,
 				"premiumuntil" => time() + 30 * 86400,
@@ -202,8 +171,8 @@ switch ($action) {
 				"tournamentticketpurchasestate" => 0,
 				"emailcoderequest" => false
 			];
-			$castPlaydata = ["worlds" => [$castWorld], "characters" => $castCharacters];
-			die(json_encode(["session" => $castSession, "playdata" => $castPlaydata]));
+			$livestreamPlaydata = ["worlds" => [$livestreamWorld], "characters" => $livestreamCharacters];
+			die(json_encode(["session" => $livestreamSession, "playdata" => $livestreamPlaydata]));
 		}
 
 		// default world info

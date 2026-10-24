@@ -683,7 +683,7 @@ OTCRFeatures = {
 --
 -- CONTENTS
 --   A. Server behaviour tweaks (non-bot)
---   B. Cast / livestream
+--   B. Livestream (no keys here)
 --   C. House backfill (admin talkaction)
 --   D. Bot activity percentages  (TABLE A / B / C + cadence)
 --   E. Bot population, navigation, parties, roam, loot, supply, quests, houses, fishing
@@ -714,25 +714,11 @@ playerLoseItemsOnDeath = false
 forceLogoutOnConnectionLoss = true
 
 -- ============================================================================
--- B. CAST / LIVESTREAM
+-- B. LIVESTREAM
 -- ============================================================================
--- Global viewer cap for a cast. Enforced in protocolgame.cpp when a viewer joins.
-castMaxViewers = 50
--- NOTE: castEnabled and castMaxViewersPerIp are LOADED but never read by any code
--- path — casting is unconditionally on and there is no per-IP viewer limit today.
--- They are kept so the keys exist if either check is ever implemented; changing
--- them right now does nothing.
-castEnabled = true
-castMaxViewersPerIp = 3
-
--- Cast operator: drive the bot AI with /cavebot from the Cast Chat channel.
--- Log in with account "@cast" (or "@livestream"), THIS string as the password, and the
--- bot's name as the character. Empty string = feature off; a wrong password silently
--- leaves you an ordinary read-only viewer (5 failures per IP / 5 min -> 15 min lockout).
--- Only "/cavebot" is ever dispatched, and only when the watched character is a bot.
--- Depends on authType = "password" above -- under session auth the login password field
--- is never parsed and this can never match (the server warns about that at startup).
-castOperatorPassword = ""
+-- The original cast system (castMaxViewers, castOperatorPassword, ...) was removed in favor
+-- of Canary's built-in livestream: broadcast with !livestream, spectate with account
+-- "@livestream". Bots cannot be spectated (the livestream mirrors a real client connection).
 
 -- ============================================================================
 -- C. HOUSE BACKFILL (admin talkaction: /housebackfill)

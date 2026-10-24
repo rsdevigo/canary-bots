@@ -1,5 +1,13 @@
 # Canary Bots with Cast
 
+> **This fork ([rsdevigo/canary-bots](https://github.com/rsdevigo/canary-bots), branch `canary-3.6.1`)**
+> is merged with Canary **v3.6.1** (client **15.11**) and **removes the cast system** in favor of
+> Canary's built-in **livestream**: broadcast with `!livestream`, spectate by logging in with the
+> account **`@livestream`** (password = the stream password, empty if none). Bots can no longer be
+> spectated. Bot runtime tables live in `database/bots/00_bot_schema.sql` (migration `62.lua` was
+> removed so the numbering does not collide with upstream). Releases are built by
+> `.github/workflows/release.yml`. The cast sections below describe the original fork.
+
 A ready-to-run fork of the [OpenTibiaBR / Canary](https://github.com/opentibiabr/canary)
 MMORPG server that adds **autonomous bot players** and a **cast (spectator)
 system** — so a fresh server feels populated, and anyone can watch a live
