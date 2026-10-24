@@ -354,7 +354,8 @@ bool IOLoginDataSave::savePlayerFirst(const std::shared_ptr<Player> &player) {
 	appendColumn("`xpboost_stamina` = {}", player->getXpBoostTime());
 	appendColumn("`quickloot_fallback` = {}", player->quickLootFallbackToMainContainer ? 1 : 0);
 
-	if (!player->isOffline()) {
+	// Bots não passam pelo login normal: lastLoginSaved fica 0 e a soma estoura `onlinetime`.
+	if (!player->isOffline() && !player->isBotPlayer()) {
 		auto now = std::chrono::system_clock::now();
 		auto lastLoginSaved = std::chrono::system_clock::from_time_t(player->lastLoginSaved);
 		appendColumn("`onlinetime` = `onlinetime` + {}", std::chrono::duration_cast<std::chrono::seconds>(now - lastLoginSaved).count());
