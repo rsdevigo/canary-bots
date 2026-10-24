@@ -590,6 +590,11 @@ public:
 	uint32_t getCastViewerCount() const {
 		return 0;
 	}
+	void setSyntheticCastViewers(uint32_t) { }
+	void disconnectAllCastViewers() { }
+	bool hasSyntheticCastViewers() const {
+		return false;
+	}
 	uint32_t getLevel() const {
 		return level;
 	}
