@@ -74,6 +74,8 @@ StyleCopReport.xml
 *_p.c
 *_h.h
 *.ilk
+*.exp
+*.lib
 *.meta
 *.obj
 *.iobj
@@ -404,6 +406,7 @@ vcpkg_installed
 
 # DB Backups
 database_backup
+cache/lua-bytecode/
 
 # CLION
 cmake-build-*
@@ -476,3 +479,4 @@ implementation_plans/map_big.jpg
 data/bot/authored/**/*.bak
 data/bot/authored/**/*.tmp
 data/bot/dumps/
+canary-debug

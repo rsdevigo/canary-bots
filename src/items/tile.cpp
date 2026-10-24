@@ -1416,7 +1416,11 @@ int32_t Tile::getThingIndex(const std::shared_ptr<Thing> &thing) const {
 	return -1;
 }
 
-int32_t Tile::getClientIndexOfCreature(const std::shared_ptr<Player> &player, const std::shared_ptr<Creature> &creature) const {
+int32_t Tile::getClientIndexOfCreature(const Player* player, const std::shared_ptr<Creature> &creature) const {
+	if (!player) {
+		return -1;
+	}
+
 	int32_t n;
 	if (ground) {
 		n = 1;
@@ -1439,6 +1443,10 @@ int32_t Tile::getClientIndexOfCreature(const std::shared_ptr<Player> &player, co
 		}
 	}
 	return -1;
+}
+
+int32_t Tile::getClientIndexOfCreature(const std::shared_ptr<Player> &player, const std::shared_ptr<Creature> &creature) const {
+	return getClientIndexOfCreature(player.get(), creature);
 }
 
 int32_t Tile::getStackposOfCreature(const std::shared_ptr<Player> &player, const std::shared_ptr<Creature> &creature) const {
