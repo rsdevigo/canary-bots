@@ -865,16 +865,6 @@ CREATE TABLE IF NOT EXISTS `kv_store` (
   PRIMARY KEY (`key_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Table structure `cast_broadcasters`
-CREATE TABLE IF NOT EXISTS `cast_broadcasters` (
-  `player_id` INT NOT NULL,
-  `player_name` VARCHAR(255) NOT NULL,
-  `started_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT `cast_broadcasters_pk` PRIMARY KEY (`player_id`),
-  CONSTRAINT `cast_broadcasters_players_fk`
-    FOREIGN KEY (`player_id`) REFERENCES `players` (`id`)
-    ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- NOTE: The default god account and sample characters are intentionally NOT
 -- seeded here. This bot distribution ships accounts/players via database/bots/

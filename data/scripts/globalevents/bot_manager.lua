@@ -19,9 +19,6 @@ function botStartup.onStartup()
 	end
 	logger.info("[BotManager] Starting bot system...")
 
-	-- Clear stale cast_broadcasters from previous run/crash
-	db.query("DELETE FROM `cast_broadcasters`")
-
 	-- BOT_LIVENESS_PACK Phase C.1: visual-identity reroll. Every server restart
 	-- shuffles each bot's looktype + addons + colors + mount + mount colors.
 	-- Bots ALREADY own the full catalog (mounts + outfits via player_storage seeded

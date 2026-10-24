@@ -195,7 +195,6 @@ bool ConfigManager::load() {
 		loadIntConfig(L, STATUS_PORT, "statusProtocolPort", 7171);
 
 		loadStringConfig(L, AUTH_TYPE, "authType", "password");
-		loadStringConfig(L, CAST_OPERATOR_PASSWORD, "castOperatorPassword", "");
 		loadStringConfig(L, HOUSE_RENT_PERIOD, "houseRentPeriod", "never");
 		loadStringConfig(L, IP, "ip", "127.0.0.1");
 		loadStringConfig(L, MAINTAIN_MODE_MESSAGE, "maintainModeMessage", "");
@@ -246,7 +245,6 @@ bool ConfigManager::load() {
 #undef BOT_CFG_LOAD_BOOL
 #undef BOT_CFG_LOAD_STR
 	loadBoolConfig(L, BOOSTED_BOSS_SLOT, "boostedBossSlot", true);
-	loadBoolConfig(L, CAST_ENABLED, "castEnabled", false);
 	loadBoolConfig(L, CLASSIC_ATTACK_SPEED, "classicAttackSpeed", false);
 	loadBoolConfig(L, CLEAN_PROTECTION_ZONES, "cleanProtectionZones", false);
 	loadBoolConfig(L, CONVERT_UNSAFE_SCRIPTS, "convertUnsafeScripts", true);
@@ -394,8 +392,6 @@ bool ConfigManager::load() {
 	loadIntConfig(L, BOSSTIARY_KILL_MULTIPLIER, "bosstiaryKillMultiplier", 1);
 	loadIntConfig(L, BUY_AOL_COMMAND_FEE, "buyAolCommandFee", 0);
 	loadIntConfig(L, BUY_BLESS_COMMAND_FEE, "buyBlessCommandFee", 0);
-	loadIntConfig(L, CAST_MAX_VIEWERS, "castMaxViewers", 50);
-	loadIntConfig(L, CAST_MAX_VIEWERS_PER_IP, "castMaxViewersPerIp", 3);
 	loadIntConfig(L, CHECK_EXPIRED_MARKET_OFFERS_EACH_MINUTES, "checkExpiredMarketOffersEachMinutes", 60);
 	loadIntConfig(L, COMBAT_CHAIN_DELAY, "combatChainDelay", 50);
 	loadIntConfig(L, COMBAT_CHAIN_TARGETS, "combatChainTargets", 5);
@@ -567,19 +563,6 @@ bool ConfigManager::load() {
 	loadStringConfig(L, LUA_API_DOCS_OUTPUT_DIRECTORY, "luaApiDocsOutputDirectory", "docs/lua-api");
 
 	loadLuaOTCFeatures(L);
-
-	// Cast operator: the secret is carried in the @cast login's password field, which is only
-	// parsed when authType != "session" (protocolgame.cpp:1005-1020). Under session auth the
-	// field stays empty, so elevation could never succeed and nothing would explain why.
-	if (!getString(CAST_OPERATOR_PASSWORD).empty()) {
-		if (getString(AUTH_TYPE) == "session") {
-			g_logger().warn("[ConfigManager] castOperatorPassword is set but authType is 'session' — "
-			                "cast operator commands are DISABLED (the login password field is never parsed).");
-		} else {
-			g_logger().info("[ConfigManager] Cast operator enabled: '/cavebot' is dispatchable from Cast Chat "
-			                "by viewers who authenticate with castOperatorPassword.");
-		}
-	}
 
 	loaded = true;
 	lua_close(L);

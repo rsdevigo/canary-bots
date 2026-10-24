@@ -6,6 +6,10 @@
 
 #pragma once
 
+// Antigo canal "Cast Chat" (removido do núcleo junto com o cast). Mensagens de debug dos bots
+// ainda são enviadas a ele, mas sem espectadores ninguém as recebe.
+static constexpr uint16_t CHANNEL_CAST = 0x50;
+
 // ============================================================================
 // bot_engine_impl.hpp — INTERNAL implementation header for libbot_engine.so.
 //

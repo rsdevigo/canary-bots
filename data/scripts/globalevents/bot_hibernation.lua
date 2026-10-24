@@ -83,7 +83,7 @@ function Hibernation.onThink(interval)
     -- 200 bots + 1-3 real players (+ a handful of cast-watched bots): ~5 µs.
     local realPlayerPositions = {}
     for _, p in ipairs(Game.getPlayers()) do
-        if (not p:isBotPlayer()) or (p:getCastViewerCount() > 0) then
+        if not p:isBotPlayer() then
             realPlayerPositions[#realPlayerPositions + 1] = p:getPosition()
         end
     end
@@ -178,10 +178,6 @@ function Hibernation.onThink(interval)
                 if p == nil or p:isRemoved() then
                     p = Player(b.name)
                     if p then BotPlayers[b.guid] = p end
-                end
-                -- Re-arm broadcasting if the watchdog already turned it off.
-                if p and not p:isRemoved() and not p:isCastBroadcasting() then
-                    p:setCastBroadcasting(true)
                 end
             end
             if BotActive ~= nil then BotActive[b.guid] = true end

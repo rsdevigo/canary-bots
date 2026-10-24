@@ -179,12 +179,6 @@ end
 local playerDeath = CreatureEvent("PlayerDeath")
 
 function playerDeath.onDeath(player, corpse, killer, mostDamageKiller, unjustified, mostDamageUnjustified)
-	-- Clean up cast broadcasting on death (skip bot players — no client/protocol)
-	if player:getAccountId() ~= 65000 and player:isCastBroadcasting() then
-		player:setCastBroadcasting(false)
-		db.query("DELETE FROM `cast_broadcasters` WHERE `player_id` = " .. player:getGuid())
-	end
-
 	if not deathListEnabled then
 		return
 	end

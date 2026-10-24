@@ -578,10 +578,18 @@ public:
 	void initBotBaseSpeed() {
 		updateBaseSpeed();
 	}
+	// Cast do fork removido (o Canary tem o livestream próprio). Stubs mantidos porque o motor de bots
+	// (libbot_engine.so) ainda pergunta "tem alguém assistindo?": a resposta agora é sempre não.
 	bool isCastBroadcasting() const {
-		return castBroadcasting;
+		return false;
 	}
-	void setCastBroadcasting(bool v);
+	void setCastBroadcasting(bool) { }
+	uint32_t getRealCastViewerCount() const {
+		return 0;
+	}
+	uint32_t getCastViewerCount() const {
+		return 0;
+	}
 	uint32_t getLevel() const {
 		return level;
 	}
@@ -1764,53 +1772,6 @@ private:
 	std::shared_ptr<Player> tradePartner = nullptr;
 	std::shared_ptr<ProtocolGame> client = nullptr;
 
-	// Cast viewer system — viewers share this Player via weak_ptr to their ProtocolGame
-	std::vector<std::weak_ptr<ProtocolGame>> castViewers;
-	// Fake viewer count for perf-harness probe bots. Never populated by a real connection, so
-	// packet construction stays on its castViewers.empty() early-outs -- see getCastViewerCount.
-	uint32_t syntheticCastViewers = 0;
-	bool castBroadcasting = false;
-	uint32_t castNextViewerNumber = 0;
-
-	void addCastViewer(const std::shared_ptr<ProtocolGame> &viewer);
-	void removeCastViewer(const std::shared_ptr<ProtocolGame> &viewer);
-	void disconnectAllCastViewers();
-
-	// PERF STRESS HARNESS: synthetic ("probe") cast viewers.
-	//
-	// A probe bot is an ordinary bot flagged as if a human were cast-watching it. That single
-	// flag drives EVERY observer gate in the engine and in Lua, because they all funnel through
-	// getCastViewerCount(): the hibernation guard (bot_engine.cpp), the anchor list
-	// (bot_engine.cpp + bot_hibernation.lua), botWalkObserved (bot_liveness.cpp), the roam
-	// "watched" test and the chat observer gate. Returning real+synthetic from the existing
-	// accessor is what makes all of them work with no further edits and no risk of missing one.
-	//
-	// getRealCastViewerCount() is the pre-existing behaviour, kept for the handful of sites that
-	// mean "an actual human is watching" rather than "this bot is observed" -- most importantly
-	// the verboseLog auto-toggle (bot_tick.cpp), which would otherwise turn the debug firehose on
-	// for every probe and let journal I/O corrupt the very measurement the probe exists to take.
-	uint32_t getRealCastViewerCount() const;
-	uint32_t getCastViewerCount() const;
-	[[nodiscard]] bool hasSyntheticCastViewers() const {
-		return syntheticCastViewers > 0;
-	}
-	void setSyntheticCastViewers(uint32_t n) {
-		syntheticCastViewers = n;
-	}
-	uint32_t getNextCastViewerNumber() { return ++castNextViewerNumber; }
-	void castDiagnosticCheck();
-
-	template <typename Func>
-	void forwardToCastViewers(Func &&fn) const {
-		for (auto it = castViewers.begin(); it != castViewers.end();) {
-			if (auto viewer = it->lock()) {
-				fn(viewer.get());
-				++it;
-			} else {
-				it = const_cast<std::vector<std::weak_ptr<ProtocolGame>> &>(castViewers).erase(it);
-			}
-		}
-	}
 
 	std::shared_ptr<Task> walkTask;
 	std::shared_ptr<Town> town;

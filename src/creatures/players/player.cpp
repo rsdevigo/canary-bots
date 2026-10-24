@@ -1719,9 +1719,10 @@ void Player::setMainBackpackUnassigned(const std::shared_ptr<Container> &contain
 bool Player::updateKillTracker(const std::shared_ptr<Container> &corpse, const std::string &playerName, const Outfit_t &creatureOutfit) const {
 	if (client) {
 		client->sendKillTrackerUpdate(corpse, playerName, creatureOutfit);
+		return true;
 	}
-	forwardToCastViewers([corpse, playerName, creatureOutfit](ProtocolGame* v) { v->sendKillTrackerUpdate(corpse, playerName, creatureOutfit); });
-	return client != nullptr;
+
+	return false;
 }
 
 void Player::updatePartyTrackerAnalyzer(bool force) const {
@@ -1751,7 +1752,6 @@ void Player::sendLootStats(const std::shared_ptr<Item> &item, uint8_t count) {
 	if (client) {
 		client->sendLootStats(item, count);
 	}
-	forwardToCastViewers([item, count](ProtocolGame* v) { v->sendLootStats(item, count); });
 
 	if (m_party) {
 		m_party->addPlayerLoot(getPlayer(), item);
@@ -1766,7 +1766,6 @@ void Player::updateSupplyTracker(const std::shared_ptr<Item> &item) {
 	if (client) {
 		client->sendUpdateSupplyTracker(item);
 	}
-	forwardToCastViewers([item](ProtocolGame* v) { v->sendUpdateSupplyTracker(item); });
 
 	if (m_party) {
 		m_party->addPlayerSupply(getPlayer(), item);
@@ -1777,14 +1776,12 @@ void Player::updateImpactTracker(CombatType_t type, int32_t amount) const {
 	if (client) {
 		client->sendUpdateImpactTracker(type, amount);
 	}
-	forwardToCastViewers([type, amount](ProtocolGame* v) { v->sendUpdateImpactTracker(type, amount); });
 }
 
 void Player::updateInputAnalyzer(CombatType_t type, int32_t amount, const std::string &target) const {
 	if (client) {
 		client->sendUpdateInputAnalyzer(type, amount, target);
 	}
-	forwardToCastViewers([type, amount, target](ProtocolGame* v) { v->sendUpdateInputAnalyzer(type, amount, target); });
 }
 
 void Player::createLeaderTeamFinder(NetworkMessage &msg) const {
@@ -2122,14 +2119,12 @@ void Player::sendChangeSpeed(const std::shared_ptr<Creature> &creature, uint16_t
 	if (client) {
 		client->sendChangeSpeed(creature, newSpeed);
 	}
-	forwardToCastViewers([creature, newSpeed](ProtocolGame* v) { v->sendChangeSpeed(creature, newSpeed); });
 }
 
 void Player::sendCreatureHealth(const std::shared_ptr<Creature> &creature) const {
 	if (client) {
 		client->sendCreatureHealth(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->sendCreatureHealth(creature); });
 }
 
 void Player::sendPartyCreatureUpdate(const std::shared_ptr<Creature> &creature) const {
@@ -2184,7 +2179,6 @@ void Player::sendDistanceShoot(const Position &from, const Position &to, uint16_
 	if (client) {
 		client->sendDistanceShoot(from, to, type);
 	}
-	forwardToCastViewers([from, to, type](ProtocolGame* v) { v->sendDistanceShoot(from, to, type); });
 }
 
 void Player::sendHouseWindow(const std::shared_ptr<House> &house, uint32_t listId) const {
@@ -2215,9 +2209,10 @@ void Player::sendClosePrivate(uint16_t channelId) {
 }
 
 void Player::sendIcons() {
-	if (!client && castViewers.empty()) {
+	if (!client) {
 		return;
 	}
+
 	// Iterates over the Bakragore icons to check if the player has any
 	auto iconBakragore = IconBakragore::None;
 	for (const auto &icon : magic_enum::enum_values<IconBakragore>()) {
@@ -2240,17 +2235,13 @@ void Player::sendIcons() {
 		iconSet = std::unordered_set<PlayerIcon>(tempVector.begin(), tempVector.end());
 	}
 
-	if (client) {
-		client->sendIcons(iconSet, iconBakragore);
-	}
-	forwardToCastViewers([iconSet, iconBakragore](ProtocolGame* v) { v->sendIcons(iconSet, iconBakragore); });
+	client->sendIcons(iconSet, iconBakragore);
 }
 
 void Player::sendIconBakragore(IconBakragore icon) const {
 	if (client) {
 		client->sendIconBakragore(icon);
 	}
-	forwardToCastViewers([icon](ProtocolGame* v) { v->sendIconBakragore(icon); });
 }
 
 void Player::removeBakragoreIcons() {
@@ -2283,14 +2274,12 @@ void Player::sendMagicEffect(const Position &pos, uint16_t type) const {
 	if (client) {
 		client->sendMagicEffect(pos, type);
 	}
-	forwardToCastViewers([pos, type](ProtocolGame* v) { v->sendMagicEffect(pos, type); });
 }
 
 void Player::removeMagicEffect(const Position &pos, uint16_t type) const {
 	if (client) {
 		client->removeMagicEffect(pos, type);
 	}
-	forwardToCastViewers([pos, type](ProtocolGame* v) { v->removeMagicEffect(pos, type); });
 }
 
 void Player::sendPing() {
@@ -2364,42 +2353,36 @@ void Player::sendStats() {
 		client->sendStats();
 		lastStatsTrainingTime = getOfflineTrainingTime() / 60 / 1000;
 	}
-	forwardToCastViewers([](ProtocolGame* v) { v->sendStats(); });
 }
 
 void Player::sendBasicData() const {
 	if (client) {
 		client->sendBasicData();
 	}
-	forwardToCastViewers([](ProtocolGame* v) { v->sendBasicData(); });
 }
 
 void Player::sendBlessStatus() const {
 	if (client) {
 		client->sendBlessStatus();
 	}
-	forwardToCastViewers([](ProtocolGame* v) { v->sendBlessStatus(); });
 }
 
 void Player::sendSkills() const {
 	if (client) {
 		client->sendSkills();
 	}
-	forwardToCastViewers([](ProtocolGame* v) { v->sendSkills(); });
 }
 
 void Player::sendTextMessage(MessageClasses mclass, const std::string &message) const {
 	if (client) {
 		client->sendTextMessage(TextMessage(mclass, message));
 	}
-	forwardToCastViewers([mclass, message](ProtocolGame* v) { v->sendTextMessage(TextMessage(mclass, message)); });
 }
 
 void Player::sendTextMessage(const TextMessage &message) const {
 	if (client) {
 		client->sendTextMessage(message);
 	}
-	forwardToCastViewers([message](ProtocolGame* v) { v->sendTextMessage(message); });
 }
 
 void Player::sendReLoginWindow(uint8_t unfairFightReduction) const {
@@ -2533,14 +2516,12 @@ void Player::sendWorldLight(LightInfo lightInfo) const {
 	if (client) {
 		client->sendWorldLight(lightInfo);
 	}
-	forwardToCastViewers([lightInfo](ProtocolGame* v) { v->sendWorldLight(lightInfo); });
 }
 
 void Player::sendTibiaTime(int32_t time) const {
 	if (client) {
 		client->sendTibiaTime(time);
 	}
-	forwardToCastViewers([time](ProtocolGame* v) { v->sendTibiaTime(time); });
 }
 
 void Player::sendChannelsDialog() const {
@@ -2559,7 +2540,6 @@ void Player::sendExperienceTracker(int64_t rawExp, int64_t finalExp) const {
 	if (client) {
 		client->sendExperienceTracker(rawExp, finalExp);
 	}
-	forwardToCastViewers([rawExp, finalExp](ProtocolGame* v) { v->sendExperienceTracker(rawExp, finalExp); });
 }
 
 void Player::sendOutfitWindow() const {
@@ -6996,53 +6976,33 @@ bool Player::canExiva(const std::string &spellParam) const {
 // send methods
 
 void Player::sendAddTileItem(const std::shared_ptr<Tile> &itemTile, const Position &pos, const std::shared_ptr<Item> &item) {
-	if (!client && castViewers.empty()) {
-		return;
-	}
-	int32_t stackpos = itemTile->getStackposOfItem(static_self_cast<Player>(), item);
-	if (stackpos != -1) {
-		if (client) {
+	if (client) {
+		int32_t stackpos = itemTile->getStackposOfItem(static_self_cast<Player>(), item);
+		if (stackpos != -1) {
 			client->sendAddTileItem(pos, stackpos, item);
 		}
-		forwardToCastViewers([pos, stackpos, item](ProtocolGame* v) { v->sendAddTileItem(pos, stackpos, item); });
 	}
 }
 
 void Player::sendUpdateTileItem(const std::shared_ptr<Tile> &updateTile, const Position &pos, const std::shared_ptr<Item> &item) {
-	if (!client && castViewers.empty()) {
-		return;
-	}
-	int32_t stackpos = updateTile->getStackposOfItem(static_self_cast<Player>(), item);
-	if (stackpos != -1) {
-		if (client) {
+	if (client) {
+		int32_t stackpos = updateTile->getStackposOfItem(static_self_cast<Player>(), item);
+		if (stackpos != -1) {
 			client->sendUpdateTileItem(pos, stackpos, item);
 		}
-		forwardToCastViewers([pos, stackpos, item](ProtocolGame* v) { v->sendUpdateTileItem(pos, stackpos, item); });
 	}
 }
 
 void Player::sendRemoveTileThing(const Position &pos, int32_t stackpos) const {
-	if (!client && castViewers.empty()) {
-		return;
-	}
 	if (stackpos != -1 && client) {
 		client->sendRemoveTileThing(pos, stackpos);
-	}
-	if (stackpos != -1) {
-		forwardToCastViewers([pos, stackpos](ProtocolGame* v) { v->sendRemoveTileThing(pos, stackpos); });
 	}
 }
 
 void Player::sendUpdateTileCreature(const std::shared_ptr<Creature> &creature) {
-	if (!client && castViewers.empty()) {
-		return;
-	}
-	auto creaturePos = creature->getPosition();
-	auto stackpos = creature->getTile()->getClientIndexOfCreature(static_self_cast<Player>(), creature);
 	if (client) {
-		client->sendUpdateTileCreature(creaturePos, stackpos, creature);
+		client->sendUpdateTileCreature(creature->getPosition(), creature->getTile()->getClientIndexOfCreature(static_self_cast<Player>(), creature), creature);
 	}
-	forwardToCastViewers([creaturePos, stackpos, creature](ProtocolGame* v) { v->sendUpdateTileCreature(creaturePos, stackpos, creature); });
 }
 
 std::string Player::getObjectPronoun() const {
@@ -7239,14 +7199,12 @@ void Player::sendCreatureEmblem(const std::shared_ptr<Creature> &creature) const
 	if (client) {
 		client->sendCreatureEmblem(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->sendCreatureEmblem(creature); });
 }
 
 void Player::sendCreatureSkull(const std::shared_ptr<Creature> &creature) const {
 	if (client) {
 		client->sendCreatureSkull(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->sendCreatureSkull(creature); });
 }
 
 void Player::checkSkullTicks(int64_t ticks) {
@@ -8313,7 +8271,6 @@ void Player::sendCloseContainer(uint8_t cid) const {
 	if (client) {
 		client->sendCloseContainer(cid);
 	}
-	forwardToCastViewers([cid](ProtocolGame* v) { v->sendCloseContainer(cid); });
 }
 
 void Player::sendChannel(uint16_t channelId, const std::string &channelName, const UsersMap* channelUsers, const InvitedMap* invitedUsers) const {
@@ -8464,7 +8421,6 @@ void Player::sendFightModes() const {
 	if (client) {
 		client->sendFightModes();
 	}
-	forwardToCastViewers([](ProtocolGame* v) { v->sendFightModes(); });
 }
 
 void Player::sendNetworkMessage(NetworkMessage &message) const {
@@ -8714,17 +8670,12 @@ void Player::sendUpdateTile(const std::shared_ptr<Tile> &updateTile, const Posit
 	if (client) {
 		client->sendUpdateTile(updateTile, pos);
 	}
-	forwardToCastViewers([updateTile, pos](ProtocolGame* v) { v->sendUpdateTile(updateTile, pos); });
 }
 
 void Player::sendChannelMessage(const std::string &author, const std::string &text, SpeakClasses type, uint16_t channel) const {
 	if (client) {
 		client->sendChannelMessage(author, text, type, channel);
 	}
-	// Forward to cast viewers so bot debug messages appear in Cast Chat
-	forwardToCastViewers([&author, &text, type, channel](ProtocolGame* v) {
-		v->sendChannelMessage(author, text, type, channel);
-	});
 }
 
 void Player::sendChannelEvent(uint16_t channelId, const std::string &playerName, ChannelEvent_t channelEvent) const {
@@ -8739,7 +8690,7 @@ void Player::sendCreatureAppear(const std::shared_ptr<Creature> &creature, const
 	}
 
 	auto tile = creature->getTile();
-	if (!tile || (!client && castViewers.empty())) {
+	if (!tile || !client) {
 		return;
 	}
 
@@ -8749,24 +8700,17 @@ void Player::sendCreatureAppear(const std::shared_ptr<Creature> &creature, const
 		return;
 	}
 
-	if (client) {
-		client->sendAddCreature(creature, pos, stackpos, isLogin);
-	}
-	forwardToCastViewers([creature, pos, stackpos, isLogin](ProtocolGame* v) { v->sendAddCreature(creature, pos, stackpos, isLogin); });
+	client->sendAddCreature(creature, pos, stackpos, isLogin);
 }
 
 void Player::sendCreatureMove(const std::shared_ptr<Creature> &creature, const Position &newPos, int32_t newStackPos, const Position &oldPos, int32_t oldStackPos, bool teleport) const {
 	if (client) {
 		client->sendMoveCreature(creature, newPos, newStackPos, oldPos, oldStackPos, teleport);
 	}
-	forwardToCastViewers([creature, newPos, newStackPos, oldPos, oldStackPos, teleport](ProtocolGame* v) { v->sendMoveCreature(creature, newPos, newStackPos, oldPos, oldStackPos, teleport); });
 }
 
 void Player::sendCreatureTurn(const std::shared_ptr<Creature> &creature) {
 	if (!creature) {
-		return;
-	}
-	if (!client && castViewers.empty()) {
 		return;
 	}
 
@@ -8775,17 +8719,15 @@ void Player::sendCreatureTurn(const std::shared_ptr<Creature> &creature) {
 		return;
 	}
 
-	if (canSeeCreature(creature)) {
+	if (client && canSeeCreature(creature)) {
 		int32_t stackpos = tile->getClientIndexOfCreature(static_self_cast<Player>(), creature);
+
 		if (stackpos < 0 || stackpos >= 10) {
 			sendUpdateTile(tile, creature->getPosition());
 			return;
 		}
 
-		if (client) {
-			client->sendCreatureTurn(creature, stackpos);
-		}
-		forwardToCastViewers([creature, stackpos](ProtocolGame* v) { v->sendCreatureTurn(creature, stackpos); });
+		client->sendCreatureTurn(creature, stackpos);
 	}
 }
 
@@ -8793,14 +8735,12 @@ void Player::sendCreatureSay(const std::shared_ptr<Creature> &creature, SpeakCla
 	if (client) {
 		client->sendCreatureSay(creature, type, text, pos);
 	}
-	forwardToCastViewers([creature, type, text, pos](ProtocolGame* v) { v->sendCreatureSay(creature, type, text, pos); });
 }
 
 void Player::sendCreatureReload(const std::shared_ptr<Creature> &creature) const {
 	if (client) {
 		client->reloadCreature(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->reloadCreature(creature); });
 }
 
 void Player::sendPrivateMessage(const std::shared_ptr<Player> &speaker, SpeakClasses type, const std::string &text) const {
@@ -8813,44 +8753,28 @@ void Player::sendCreatureSquare(const std::shared_ptr<Creature> &creature, Squar
 	if (client) {
 		client->sendCreatureSquare(creature, color);
 	}
-	forwardToCastViewers([creature, color](ProtocolGame* v) { v->sendCreatureSquare(creature, color); });
 }
 
 void Player::sendCreatureChangeOutfit(const std::shared_ptr<Creature> &creature, const Outfit_t &outfit) const {
 	if (client) {
 		client->sendCreatureOutfit(creature, outfit);
 	}
-	forwardToCastViewers([creature, outfit](ProtocolGame* v) { v->sendCreatureOutfit(creature, outfit); });
 }
 
 void Player::sendCreatureChangeVisible(const std::shared_ptr<Creature> &creature, bool visible) {
-	if (!creature) {
-		return;
-	}
-	if (!client && castViewers.empty()) {
+	if (!client || !creature) {
 		return;
 	}
 
 	if (creature->getPlayer()) {
 		if (visible) {
-			auto outfit = creature->getCurrentOutfit();
-			if (client) {
-				client->sendCreatureOutfit(creature, outfit);
-			}
-			forwardToCastViewers([creature, outfit](ProtocolGame* v) { v->sendCreatureOutfit(creature, outfit); });
+			client->sendCreatureOutfit(creature, creature->getCurrentOutfit());
 		} else {
 			static Outfit_t outfit;
-			if (client) {
-				client->sendCreatureOutfit(creature, outfit);
-			}
-			forwardToCastViewers([creature, outfit](ProtocolGame* v) { v->sendCreatureOutfit(creature, outfit); });
-		}
-	} else if (canSeeInvisibility()) {
-		auto outfit = creature->getCurrentOutfit();
-		if (client) {
 			client->sendCreatureOutfit(creature, outfit);
 		}
-		forwardToCastViewers([creature, outfit](ProtocolGame* v) { v->sendCreatureOutfit(creature, outfit); });
+	} else if (canSeeInvisibility()) {
+		client->sendCreatureOutfit(creature, creature->getCurrentOutfit());
 	} else {
 		auto tile = creature->getTile();
 		if (!tile) {
@@ -8866,17 +8790,9 @@ void Player::sendCreatureChangeVisible(const std::shared_ptr<Creature> &creature
 				sendUpdateTile(tile, creature->getPosition());
 				return;
 			}
-			auto creaturePos = creature->getPosition();
-			if (client) {
-				client->sendAddCreature(creature, creaturePos, stackpos, false);
-			}
-			forwardToCastViewers([creature, creaturePos, stackpos](ProtocolGame* v) { v->sendAddCreature(creature, creaturePos, stackpos, false); });
+			client->sendAddCreature(creature, creature->getPosition(), stackpos, false);
 		} else {
-			auto creaturePos = creature->getPosition();
-			if (client) {
-				client->sendRemoveTileThing(creaturePos, stackpos);
-			}
-			forwardToCastViewers([creaturePos, stackpos](ProtocolGame* v) { v->sendRemoveTileThing(creaturePos, stackpos); });
+			client->sendRemoveTileThing(creature->getPosition(), stackpos);
 		}
 	}
 }
@@ -8885,70 +8801,60 @@ void Player::sendCreatureLight(const std::shared_ptr<Creature> &creature) const 
 	if (client) {
 		client->sendCreatureLight(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->sendCreatureLight(creature); });
 }
 
 void Player::sendCreatureIcon(const std::shared_ptr<Creature> &creature) const {
 	if (client && !client->oldProtocol) {
 		client->sendCreatureIcon(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->sendCreatureIcon(creature); });
 }
 
 void Player::sendUpdateCreature(const std::shared_ptr<Creature> &creature) const {
 	if (client) {
 		client->sendUpdateCreature(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->sendUpdateCreature(creature); });
 }
 
 void Player::sendCreatureWalkthrough(const std::shared_ptr<Creature> &creature, bool walkthrough) const {
 	if (client) {
 		client->sendCreatureWalkthrough(creature, walkthrough);
 	}
-	forwardToCastViewers([creature, walkthrough](ProtocolGame* v) { v->sendCreatureWalkthrough(creature, walkthrough); });
 }
 
 void Player::sendCreatureShield(const std::shared_ptr<Creature> &creature) const {
 	if (client) {
 		client->sendCreatureShield(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->sendCreatureShield(creature); });
 }
 
 void Player::sendCreatureType(const std::shared_ptr<Creature> &creature, uint8_t creatureType) const {
 	if (client) {
 		client->sendCreatureType(creature, creatureType);
 	}
-	forwardToCastViewers([creature, creatureType](ProtocolGame* v) { v->sendCreatureType(creature, creatureType); });
 }
 
 void Player::sendSpellCooldown(uint16_t spellId, uint32_t time) const {
 	if (client) {
 		client->sendSpellCooldown(spellId, time);
 	}
-	forwardToCastViewers([spellId, time](ProtocolGame* v) { v->sendSpellCooldown(spellId, time); });
 }
 
 void Player::sendSpellGroupCooldown(SpellGroup_t groupId, uint32_t time) const {
 	if (client) {
 		client->sendSpellGroupCooldown(groupId, time);
 	}
-	forwardToCastViewers([groupId, time](ProtocolGame* v) { v->sendSpellGroupCooldown(groupId, time); });
 }
 
 void Player::sendUseItemCooldown(uint32_t time) const {
 	if (client) {
 		client->sendUseItemCooldown(time);
 	}
-	forwardToCastViewers([time](ProtocolGame* v) { v->sendUseItemCooldown(time); });
 }
 
 void Player::reloadCreature(const std::shared_ptr<Creature> &creature) const {
 	if (client) {
 		client->reloadCreature(creature);
 	}
-	forwardToCastViewers([creature](ProtocolGame* v) { v->reloadCreature(creature); });
 }
 
 void Player::sendModalWindow(const ModalWindow &modalWindow) {
@@ -8987,7 +8893,7 @@ void Player::closeAllExternalContainers() {
 // container
 
 void Player::sendAddContainerItem(const std::shared_ptr<Container> &container, std::shared_ptr<Item> item) {
-	if (!client && castViewers.empty()) {
+	if (!client) {
 		return;
 	}
 
@@ -9013,15 +8919,12 @@ void Player::sendAddContainerItem(const std::shared_ptr<Container> &container, s
 		} else if (containerInfo.index >= container->capacity()) {
 			item = container->getItemByIndex(containerInfo.index - 1);
 		}
-		if (client) {
-			client->sendAddContainerItem(containerId, slot, item);
-		}
-		forwardToCastViewers([containerId, slot, item](ProtocolGame* v) { v->sendAddContainerItem(containerId, slot, item); });
+		client->sendAddContainerItem(containerId, slot, item);
 	}
 }
 
 void Player::sendUpdateContainerItem(const std::shared_ptr<Container> &container, uint16_t slot, const std::shared_ptr<Item> &newItem) {
-	if (!client && castViewers.empty()) {
+	if (!client) {
 		return;
 	}
 
@@ -9039,15 +8942,12 @@ void Player::sendUpdateContainerItem(const std::shared_ptr<Container> &container
 			continue;
 		}
 
-		if (client) {
-			client->sendUpdateContainerItem(containerId, slot, newItem);
-		}
-		forwardToCastViewers([containerId, slot, newItem](ProtocolGame* v) { v->sendUpdateContainerItem(containerId, slot, newItem); });
+		client->sendUpdateContainerItem(containerId, slot, newItem);
 	}
 }
 
 void Player::sendRemoveContainerItem(const std::shared_ptr<Container> &container, uint16_t slot) {
-	if (!client && castViewers.empty()) {
+	if (!client) {
 		return;
 	}
 
@@ -9066,12 +8966,7 @@ void Player::sendRemoveContainerItem(const std::shared_ptr<Container> &container
 			sendContainer(containerId, container, false, firstIndex);
 		}
 
-		auto removeSlot = std::max<uint16_t>(slot, firstIndex);
-		auto removeItem = container->getItemByIndex(container->capacity() + firstIndex);
-		if (client) {
-			client->sendRemoveContainerItem(containerId, removeSlot, removeItem);
-		}
-		forwardToCastViewers([containerId, removeSlot, removeItem](ProtocolGame* v) { v->sendRemoveContainerItem(containerId, removeSlot, removeItem); });
+		client->sendRemoveContainerItem(containerId, std::max<uint16_t>(slot, firstIndex), container->getItemByIndex(container->capacity() + firstIndex));
 	}
 }
 
@@ -9079,7 +8974,6 @@ void Player::sendContainer(uint8_t cid, const std::shared_ptr<Container> &contai
 	if (client) {
 		client->sendContainer(cid, container, hasParent, firstIndex);
 	}
-	forwardToCastViewers([cid, container, hasParent, firstIndex](ProtocolGame* v) { v->sendContainer(cid, container, hasParent, firstIndex); });
 }
 
 void Player::beginBatchUpdate() {
@@ -9195,7 +9089,6 @@ void Player::sendMonkData(MonkData_t type, uint8_t value) {
 	if (client) {
 		client->sendMonkData(type, value);
 	}
-	forwardToCastViewers([type, value](ProtocolGame* v) { v->sendMonkData(type, value); });
 }
 
 // inventory
@@ -9228,14 +9121,12 @@ void Player::sendInventoryItem(Slots_t slot, const std::shared_ptr<Item> &item) 
 	if (client) {
 		client->sendInventoryItem(slot, item);
 	}
-	forwardToCastViewers([slot, item](ProtocolGame* v) { v->sendInventoryItem(slot, item); });
 }
 
 void Player::sendInventoryIds() const {
 	if (client) {
 		client->sendInventoryIds();
 	}
-	forwardToCastViewers([](ProtocolGame* v) { v->sendInventoryIds(); });
 }
 
 std::vector<std::shared_ptr<Condition>> Player::getMuteConditions() const {
@@ -11975,7 +11866,6 @@ void Player::sendLootContainers() const {
 	if (client) {
 		client->sendLootContainers();
 	}
-	forwardToCastViewers([](ProtocolGame* v) { v->sendLootContainers(); });
 }
 
 void Player::sendPlayerTyping(const std::shared_ptr<Creature> &creature, uint8_t typing) const {
@@ -11990,28 +11880,24 @@ void Player::sendSingleSoundEffect(const Position &pos, SoundEffect_t id, Source
 	if (client) {
 		client->sendSingleSoundEffect(pos, id, source);
 	}
-	forwardToCastViewers([pos, id, source](ProtocolGame* v) { v->sendSingleSoundEffect(pos, id, source); });
 }
 
 void Player::sendDoubleSoundEffect(const Position &pos, SoundEffect_t mainSoundId, SourceEffect_t mainSource, SoundEffect_t secondarySoundId, SourceEffect_t secondarySource) const {
 	if (client) {
 		client->sendDoubleSoundEffect(pos, mainSoundId, mainSource, secondarySoundId, secondarySource);
 	}
-	forwardToCastViewers([pos, mainSoundId, mainSource, secondarySoundId, secondarySource](ProtocolGame* v) { v->sendDoubleSoundEffect(pos, mainSoundId, mainSource, secondarySoundId, secondarySource); });
 }
 
 void Player::sendAmbientSoundEffect(const SoundAmbientEffect_t id) const {
 	if (client) {
 		client->sendAmbientSoundEffect(id);
 	}
-	forwardToCastViewers([id](ProtocolGame* v) { v->sendAmbientSoundEffect(id); });
 }
 
 void Player::sendMusicSoundEffect(const SoundMusicEffect_t id) const {
 	if (client) {
 		client->sendMusicSoundEffect(id);
 	}
-	forwardToCastViewers([id](ProtocolGame* v) { v->sendMusicSoundEffect(id); });
 }
 
 SoundEffect_t Player::getAttackSoundEffect() const {
@@ -12405,35 +12291,26 @@ void Player::onRemoveContainerItem(const std::shared_ptr<Container> &container, 
 }
 
 void Player::onCloseContainer(const std::shared_ptr<Container> &container) {
-	if (!client && castViewers.empty()) {
+	if (!client) {
 		return;
 	}
 
 	for (const auto &[containerId, containerInfo] : openContainers) {
 		if (containerInfo.container == container) {
-			if (client) {
-				client->sendCloseContainer(containerId);
-			}
-			forwardToCastViewers([containerId](ProtocolGame* v) { v->sendCloseContainer(containerId); });
+			client->sendCloseContainer(containerId);
 		}
 	}
 }
 
 void Player::onSendContainer(const std::shared_ptr<Container> &container) {
-	if (!container) {
-		return;
-	}
-	if (!client && castViewers.empty()) {
+	if (!client || !container) {
 		return;
 	}
 
 	const bool hasParent = container->hasParent();
 	for (const auto &[containerId, containerInfo] : openContainers) {
 		if (containerInfo.container == container) {
-			if (client) {
-				client->sendContainer(containerId, container, hasParent, containerInfo.index);
-			}
-			forwardToCastViewers([containerId, container, hasParent, index = containerInfo.index](ProtocolGame* v) { v->sendContainer(containerId, container, hasParent, index); });
+			client->sendContainer(containerId, container, hasParent, containerInfo.index);
 		}
 	}
 }
@@ -12459,7 +12336,6 @@ void Player::autoCloseContainers(const std::shared_ptr<Container> &container) {
 		if (client) {
 			client->sendCloseContainer(containerId);
 		}
-		forwardToCastViewers([containerId](ProtocolGame* v) { v->sendCloseContainer(containerId); });
 	}
 }
 
@@ -13355,109 +13231,6 @@ void Player::sendSpellCooldowns() {
 			continue;
 		}
 		sendSpellCooldown(spellId, ticks);
-	}
-}
-
-// ---- Cast viewer system ----
-
-void Player::setCastBroadcasting(bool v) {
-	castBroadcasting = v;
-	if (v) {
-		// Open Cast Chat channel for the caster
-		if (client) {
-			client->sendChannel(CHANNEL_CAST, "Cast Chat", nullptr, nullptr);
-		}
-		// Bots have no client, so openPlayerContainers() never runs — their openContainers
-		// map stays empty, and viewers connecting see no inventory window. Pre-register the
-		// main backpack at broadcast-enable time so sendCastViewerInit's openContainers loop
-		// finds it. Pure map mutation, no packets emitted here. Idempotent: getContainerID
-		// returns >=0 on re-entry (wake from hibernation reuses the pooled Player object).
-		// equipBot (bot_engine.cpp) wipes and replaces the backpack on every activation;
-		// the wipe block there refreshes openContainers[0] itself when isCastBroadcasting,
-		// so the stale shared_ptr is replaced before the next viewer sendCastViewerInit.
-		if (isBotPlayer()) {
-			const auto &bp = getBackpack();
-			if (bp && getContainerID(bp) < 0) {
-				addContainer(0, bp);
-			}
-		}
-	} else {
-		disconnectAllCastViewers();
-		castNextViewerNumber = 0;
-	}
-}
-
-void Player::addCastViewer(const std::shared_ptr<ProtocolGame> &viewer) {
-	castViewers.emplace_back(viewer);
-}
-
-void Player::removeCastViewer(const std::shared_ptr<ProtocolGame> &viewer) {
-	castViewers.erase(
-		std::remove_if(castViewers.begin(), castViewers.end(),
-			[&viewer](const std::weak_ptr<ProtocolGame> &wp) {
-				auto sp = wp.lock();
-				return !sp || sp == viewer;
-			}),
-		castViewers.end()
-	);
-}
-
-void Player::disconnectAllCastViewers() {
-	for (auto &wp : castViewers) {
-		if (auto viewer = wp.lock()) {
-			viewer->disconnectClient("The broadcast has ended.");
-		}
-	}
-	castViewers.clear();
-}
-
-// Genuine human viewers only -- live weak_ptrs in castViewers. Callers that mean "an actual
-// person is watching this character" (verboseLog auto-toggle, roam cast narration, the cast
-// capacity check and the join/leave log lines) must use THIS, not getCastViewerCount().
-uint32_t Player::getRealCastViewerCount() const {
-	uint32_t count = 0;
-	for (const auto &wp : castViewers) {
-		if (wp.lock()) {
-			count++;
-		}
-	}
-	return count;
-}
-
-// Observer semantics: real viewers plus perf-harness synthetic ones. Every "is this bot
-// observed?" gate in the bot engine and in bot_hibernation.lua funnels through here, which is
-// exactly why the synthetic count is folded in at this level -- one accessor, no gate missed.
-uint32_t Player::getCastViewerCount() const {
-	return getRealCastViewerCount() + syntheticCastViewers;
-}
-
-void Player::castDiagnosticCheck() {
-	if (!castBroadcasting || castViewers.empty() || !client) {
-		return;
-	}
-
-	auto casterKnown = client->getKnownCreatureCount();
-	auto casterPos = getPosition();
-	auto casterPackets = client->getCastPacketsSent();
-
-	for (const auto &wp : castViewers) {
-		auto viewer = wp.lock();
-		if (!viewer) {
-			continue;
-		}
-
-		auto viewerKnown = viewer->getKnownCreatureCount();
-		auto viewerPackets = viewer->getCastPacketsSent();
-
-		g_logger().info("[CastDiag] {} -> viewer: casterPkts={} viewerPkts={} casterCreatures={} viewerCreatures={} pos=({},{},{})",
-			getName(), casterPackets, viewerPackets,
-			casterKnown, viewerKnown,
-			casterPos.x, casterPos.y, casterPos.z);
-
-		if (viewerPackets > 100 && std::abs(static_cast<int>(casterKnown) - static_cast<int>(viewerKnown)) > 5) {
-			g_logger().warn("[CastDiag] DESYNC WARNING: {} creature count diverged! caster={} viewer={}",
-				getName(), casterKnown, viewerKnown);
-		}
 	}
 }
 

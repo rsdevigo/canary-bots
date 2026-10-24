@@ -3010,12 +3010,6 @@ function BotSystem.activateBot(player)
 	-- Equip best gear for level and vocation
 	BotSystem.equipBot(player)
 
-	-- Enable cast broadcasting so viewers can watch this bot
-	player:setCastBroadcasting(true)
-	db.query("INSERT INTO `cast_broadcasters` (`player_id`, `player_name`) VALUES ("
-		.. guid .. ", " .. db.escapeString(player:getName())
-		.. ") ON DUPLICATE KEY UPDATE `player_name` = " .. db.escapeString(player:getName()))
-
 	local pos = player:getPosition()
 	local townName = town and town:getName() or "unknown"
 	logger.info("[Bot] Activated " .. player:getName() ..
@@ -3039,8 +3033,6 @@ function BotSystem.deactivateBot(player)
 		end
 		BotState[guid].state = BOT_STATE.INACTIVE
 	end
-	player:setCastBroadcasting(false)
-	db.query("DELETE FROM `cast_broadcasters` WHERE `player_id` = " .. guid)
 	if not player:teleportTo(BOT_CONFIG.DEAD_POSITION) then
 		-- Fallback position if storage tile fails
 		player:teleportTo(Position(31970, 32283, 7))
@@ -3069,13 +3061,6 @@ function BotSystem.thinkEvent(guid)
 	-- varies wildly" symptom user reported. The state==INACTIVE check is the correct
 	-- "is this bot really offline" signal — wakeBot puts the bot in IDLE state.
 	if not BotActive[guid] then
-		local s = BotState[guid]
-		if s and s.state == BOT_STATE.INACTIVE then
-			if player:isCastBroadcasting() then
-				player:setCastBroadcasting(false)
-				db.query("DELETE FROM `cast_broadcasters` WHERE `player_id` = " .. guid)
-			end
-		end
 		return
 	end
 

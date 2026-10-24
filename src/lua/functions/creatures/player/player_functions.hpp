@@ -34,9 +34,6 @@ class PlayerFunctions {
 	static int luaPlayerIsBotPlayer(lua_State* L);
 	static int luaPlayerSetBotPlayer(lua_State* L);
 
-	static int luaPlayerIsCastBroadcasting(lua_State* L);
-	static int luaPlayerSetCastBroadcasting(lua_State* L);
-	static int luaPlayerGetCastViewerCount(lua_State* L);
 
 	static int luaPlayerGetGuid(lua_State* L);
 	static int luaPlayerGetIp(lua_State* L);

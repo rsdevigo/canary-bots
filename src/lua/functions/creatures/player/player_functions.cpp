@@ -129,9 +129,6 @@ void PlayerFunctions::init(lua_State* L) {
 	Lua::registerMethod(L, "Player", "isBotPlayer", PlayerFunctions::luaPlayerIsBotPlayer);
 	Lua::registerMethod(L, "Player", "setBotPlayer", PlayerFunctions::luaPlayerSetBotPlayer);
 
-	Lua::registerMethod(L, "Player", "isCastBroadcasting", PlayerFunctions::luaPlayerIsCastBroadcasting);
-	Lua::registerMethod(L, "Player", "setCastBroadcasting", PlayerFunctions::luaPlayerSetCastBroadcasting);
-	Lua::registerMethod(L, "Player", "getCastViewerCount", PlayerFunctions::luaPlayerGetCastViewerCount);
 
 	Lua::registerMethod(L, "Player", "getGuid", PlayerFunctions::luaPlayerGetGuid);
 	Lua::registerMethod(L, "Player", "getIp", PlayerFunctions::luaPlayerGetIp);
@@ -795,41 +792,6 @@ int PlayerFunctions::luaPlayerSetBotPlayer(lua_State* L) {
 	if (player) {
 		player->setBotPlayer(Lua::getBoolean(L, 2));
 		Lua::pushBoolean(L, true);
-	} else {
-		lua_pushnil(L);
-	}
-	return 1;
-}
-
-int PlayerFunctions::luaPlayerIsCastBroadcasting(lua_State* L) {
-	// player:isCastBroadcasting()
-	const auto &player = Lua::getUserdataShared<Player>(L, 1, "Player");
-	if (player) {
-		Lua::pushBoolean(L, player->isCastBroadcasting());
-	} else {
-		lua_pushnil(L);
-	}
-	return 1;
-}
-
-int PlayerFunctions::luaPlayerSetCastBroadcasting(lua_State* L) {
-	// player:setCastBroadcasting(value)
-	const auto &player = Lua::getUserdataShared<Player>(L, 1, "Player");
-	if (player) {
-		bool enable = Lua::getBoolean(L, 2);
-		player->setCastBroadcasting(enable);
-		Lua::pushBoolean(L, true);
-	} else {
-		lua_pushnil(L);
-	}
-	return 1;
-}
-
-int PlayerFunctions::luaPlayerGetCastViewerCount(lua_State* L) {
-	// player:getCastViewerCount()
-	const auto &player = Lua::getUserdataShared<Player>(L, 1, "Player");
-	if (player) {
-		lua_pushnumber(L, player->getCastViewerCount());
 	} else {
 		lua_pushnil(L);
 	}

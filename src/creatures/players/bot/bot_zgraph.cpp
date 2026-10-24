@@ -51,7 +51,7 @@ namespace {
 // ---- raw cell access: NEVER materializes (no Map::getTile) ----
 struct ZCell {
 	std::shared_ptr<Tile> tile; // materialized tile (preferred — exact)
-	std::shared_ptr<BasicTile> cached; // basic-tile cache entry
+	const BasicTile* cached = nullptr; // basic-tile cache entry
 	bool exists() const {
 		return tile != nullptr || cached != nullptr;
 	}
@@ -77,7 +77,7 @@ ZCell zCellAt(int32_t x, int32_t y, int32_t z) {
 
 // OR of ItemType floorChange flags for a cached (unmaterialized) tile — this is
 // exactly what Tile would carry after internalAddThing set its flags.
-uint32_t cachedFcFlags(const std::shared_ptr<BasicTile>& bt) {
+uint32_t cachedFcFlags(const BasicTile* bt) {
 	uint32_t flags = 0;
 	if (bt->ground) {
 		flags |= Item::items[bt->ground->id].floorChange;
@@ -2150,12 +2150,13 @@ void BotEngine::buildZPortalGraph() {
 				const auto& tiles = floor->getTiles();
 				for (int32_t i = 0; i < SECTOR_SIZE; ++i) {
 					for (int32_t j = 0; j < SECTOR_SIZE; ++j) {
-						const auto& pairTC = tiles[i][j];
-						if (!pairTC.first && !pairTC.second) {
+						const auto& liveTile = tiles[i][j];
+						const BasicTile* cachedTile = floor->getTileCache(static_cast<uint16_t>(sx + i), static_cast<uint16_t>(sy + j));
+						if (!liveTile && !cachedTile) {
 							continue;
 						}
 						cellsSeen++;
-						ZCell c { pairTC.first, pairTC.second };
+						ZCell c { liveTile, cachedTile };
 						cellPortals.clear();
 						zClassifyCell(sx + i, sy + j, z, c, cellPortals);
 						for (const auto& p : cellPortals) {
