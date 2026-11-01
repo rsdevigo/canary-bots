@@ -176,9 +176,11 @@ which doubles as the debugging surface:
 ![Cast chat with bot activity log](assets/pics/cast-chat-bot-log.png)
 
 > [!NOTE]
-> **Base version.** This repository is forked from `opentibiabr/canary` at commit
-> **`ded10949d`** (2026-02-19) and adds the bot + cast features on top. Use that
-> commit as the reference point for the underlying Canary version/protocol.
+> **Base version.** This branch (`canary-protocol-15.25`) is the bot + cast features
+> merged with `opentibiabr/canary` `main` (server 3.6.1, **Tibia client protocol 15.25**,
+> merge base `ded10949d`). Use the `canary-3.6.1` branch for the previous Canary version.
+> Because the engine's `BOT_*` config keys are read by ordinal, **rebuild `libbot_engine.so`
+> together with the server binary** — never mix a binary and a `.so` from different builds.
 
 ## Tested on
 
