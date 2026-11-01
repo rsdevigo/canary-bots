@@ -1,0 +1,72 @@
+# Compila o servidor (canary) e o motor de bots (libbot_engine.so) e publica num release, no mesmo
+# formato do canary-bots-with-cast: canary, libbot_engine.so e canary-bots-runtime-<tag>.tar.gz
+# (config.lua.dist, schema.sql, data/, data-otservbr-global/, database/).
+# O mapa principal (otservbr.otbm) não vai no tarball: o Canary baixa de mapDownloadUrl.
+#
+# Tag v* -> release com os arquivos. Disparo manual -> só artifact do workflow (para testar).
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    # GCC 13 e a mesma glibc/libstdc++ da imagem ubuntu:24.04 usada no Docker.
+    runs-on: ubuntu-24.04
+    env:
+      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependências do sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build autoconf automake autoconf-archive libtool pkg-config bison flex
+
+      - name: Cache dos pacotes do vcpkg
+        uses: actions/cache@v4
+        with:
+          path: .vcpkg-cache
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: vcpkg na baseline do projeto
+        run: |
+          baseline=$(grep builtin-baseline vcpkg.json | awk -F'"' '{print $4}')
+          git clone -q https://github.com/microsoft/vcpkg.git "$RUNNER_TEMP/vcpkg"
+          git -C "$RUNNER_TEMP/vcpkg" checkout -q "$baseline"
+          "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+          mkdir -p .vcpkg-cache
+
+      - name: Configurar e compilar
+        run: |
+          cmake --preset linux-release -DOPTIONS_ENABLE_SCCACHE=OFF
+          cmake --build build/linux-release --target canary bot_engine
+
+      - name: Empacotar
+        run: |
+          ver="${GITHUB_REF_NAME//\//-}"
+          mkdir dist
+          cp canary dist/canary
+          cp build/linux-release/bin/libbot_engine.so dist/libbot_engine.so
+          strip --strip-debug dist/canary dist/libbot_engine.so
+          tar czf "dist/canary-bots-runtime-${ver}.tar.gz" config.lua.dist schema.sql data data-otservbr-global database
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canary-bots-${{ github.sha }}
+          path: dist/*
+          retention-days: 7
+
+      - name: Publicar release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
